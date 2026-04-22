@@ -1,52 +1,52 @@
 // swift-tools-version: 6.0
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 
 import PackageDescription
 
 let package = Package(
-    name: "MetricKitML",
+    name: "EvalKit",
     platforms: [
         .iOS(.v18),
         .macOS(.v15)
     ],
     products: [
-        .library(name: "MetricKitML", targets: ["MetricKitML"]),
-        .library(name: "MetricKitMLCoreML", targets: ["MetricKitMLCoreML"]),
-        .library(name: "MetricKitMLFoundation", targets: ["MetricKitMLFoundation"])
+        .library(name: "EvalKit", targets: ["EvalKit"]),
+        .library(name: "EvalKitCoreML", targets: ["EvalKitCoreML"]),
+        .library(name: "EvalKitFoundation", targets: ["EvalKitFoundation"])
     ],
     targets: [
         // Target 1 — core only, no ML imports, works in any iOS project
         .target(
-            name: "MetricKitML",
-            path: "Sources/MetricKitML"
+            name: "EvalKit",
+            path: "Sources/EvalKit"
         ),
-        // Target 2 — CoreML evaluation utilities, depends on MetricKitML
+        // Target 2 — CoreML evaluation utilities, depends on EvalKit
         .target(
-            name: "MetricKitMLCoreML",
-            dependencies: ["MetricKitML"],
-            path: "Sources/MetricKitMLCoreML"
+            name: "EvalKitCoreML",
+            dependencies: ["EvalKit"],
+            path: "Sources/EvalKitCoreML"
         ),
-        // Target 3 — Foundation Model evaluation utilities, depends on MetricKitML
+        // Target 3 — Foundation Model evaluation utilities, depends on EvalKit
         .target(
-            name: "MetricKitMLFoundation",
-            dependencies: ["MetricKitML"],
-            path: "Sources/MetricKitMLFoundation"
+            name: "EvalKitFoundation",
+            dependencies: ["EvalKit"],
+            path: "Sources/EvalKitFoundation"
         ),
         // Tests
         .testTarget(
-            name: "MetricKitMLTests",
-            dependencies: ["MetricKitML"],
-            path: "Tests/MetricKitMLTests"
+            name: "EvalKitTests",
+            dependencies: ["EvalKit"],
+            path: "Tests/EvalKitTests"
         ),
         .testTarget(
-            name: "MetricKitMLCoreMLTests",
-            dependencies: ["MetricKitMLCoreML"],
-            path: "Tests/MetricKitMLCoreMLTests"
+            name: "EvalKitCoreMLTests",
+            dependencies: ["EvalKitCoreML"],
+            path: "Tests/EvalKitCoreMLTests"
         ),
         .testTarget(
-            name: "MetricKitMLFoundationTests",
-            dependencies: ["MetricKitMLFoundation"],
-            path: "Tests/MetricKitMLFoundationTests"
+            name: "EvalKitFoundationTests",
+            dependencies: ["EvalKitFoundation"],
+            path: "Tests/EvalKitFoundationTests"
         )
     ]
 )

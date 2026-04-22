@@ -1,11 +1,11 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // CoreMLLatencyRunnerTests.swift
-// MetricKitMLCoreMLTests
+// EvalKitCoreMLTests
 
 import XCTest
-import MetricKitML
-@testable import MetricKitMLCoreML
+import EvalKit
+@testable import EvalKitCoreML
 
 final class CoreMLLatencyRunnerTests: XCTestCase {
 

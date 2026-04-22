@@ -1,10 +1,10 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // MockEvaluationRunner.swift
-// MetricKitMLTests
+// EvalKitTests
 
 import Foundation
-@testable import MetricKitML
+@testable import EvalKit
 
 // MARK: - Mock Case
 

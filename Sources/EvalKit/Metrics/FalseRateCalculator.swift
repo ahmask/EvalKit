@@ -1,7 +1,7 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // FalseRateCalculator.swift
-// MetricKitML/Metrics
+// EvalKit/Metrics
 //
 // Computes false-positive and false-negative counts and rates from a batch
 // of EvaluationResults. Relevant for binary classification and object detection.

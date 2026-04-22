@@ -1,13 +1,13 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // CoreMLEvaluationCase.swift
-// MetricKitMLCoreML
+// EvalKitCoreML
 //
 // Convenience EvaluationCase implementation for CoreML text-classification features.
 
 import Foundation
 import CoreML
-import MetricKitML
+import EvalKit
 
 /// A ready-made `EvaluationCase` for CoreML text-classification evaluations.
 ///

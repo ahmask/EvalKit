@@ -1,11 +1,11 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // FoundationModelRunnerTests.swift
-// MetricKitMLFoundationTests
+// EvalKitFoundationTests
 
 import XCTest
-import MetricKitML
-@testable import MetricKitMLFoundation
+import EvalKit
+@testable import EvalKitFoundation
 
 final class FoundationModelRunnerTests: XCTestCase {
 

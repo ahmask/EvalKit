@@ -1,13 +1,13 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // FoundationModelCase.swift
-// MetricKitMLFoundation
+// EvalKitFoundation
 //
 // Convenience EvaluationCase for Apple Foundation Model features
 // (TopicFinder, PackingList).
 
 import Foundation
-import MetricKitML
+import EvalKit
 
 /// A generic `EvaluationCase` for Foundation Model features.
 ///

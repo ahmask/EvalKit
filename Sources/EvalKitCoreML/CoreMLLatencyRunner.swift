@@ -1,14 +1,14 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // CoreMLLatencyRunner.swift
-// MetricKitMLCoreML
+// EvalKitCoreML
 //
 // Base class pattern for CoreML EvaluationRunners that measure latency and
 // track errors per case.
 
 import Foundation
 import CoreML
-import MetricKitML
+import EvalKit
 
 /// Base implementation helper for CoreML classification evaluation runners.
 ///

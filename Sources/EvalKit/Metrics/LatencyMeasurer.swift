@@ -1,7 +1,7 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // LatencyMeasurer.swift
-// MetricKitML/Metrics
+// EvalKit/Metrics
 //
 // Measures wall-clock latency for async evaluation steps.
 

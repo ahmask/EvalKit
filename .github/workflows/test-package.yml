@@ -1,4 +1,4 @@
-name: Test MetricKitML Package
+name: Test EvalKit Package
 
 on:
   push:

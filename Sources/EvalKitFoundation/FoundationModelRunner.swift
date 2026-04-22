@@ -1,13 +1,13 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // FoundationModelRunner.swift
-// MetricKitMLFoundation
+// EvalKitFoundation
 //
 // Base runner for Apple Foundation Model evaluation cases.
 // Measures latency with LatencyMeasurer and captures errors per case.
 
 import Foundation
-import MetricKitML
+import EvalKit
 
 /// Base implementation helper for Foundation Model `EvaluationRunner` conformances.
 ///

@@ -1,7 +1,7 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // EvaluationReport.swift
-// MetricKitML/Models
+// EvalKit/Models
 //
 // Final aggregated report produced by an EvaluationReporter.
 

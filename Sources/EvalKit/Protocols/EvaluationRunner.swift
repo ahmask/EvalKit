@@ -1,7 +1,7 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // EvaluationRunner.swift
-// MetricKitML/Protocols
+// EvalKit/Protocols
 //
 // Protocol for running a single evaluation case and producing an EvaluationResult.
 

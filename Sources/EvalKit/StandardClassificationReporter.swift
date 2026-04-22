@@ -1,7 +1,7 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // StandardClassificationReporter.swift
-// MetricKitML
+// EvalKit
 //
 // Ready-to-use EvaluationReporter for multi-class text classification.
 // Computes accuracy, macro/weighted P/R/F1, latency mean and P90,

@@ -1,7 +1,7 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // PrecisionRecallF1.swift
-// MetricKitML/Metrics
+// EvalKit/Metrics
 //
 // Computes per-class and aggregate precision, recall, and F1 from EvaluationResults.
 // Mirrors MetricsCalculator in CMLVSLLM and PrecisionRecallF1 in the existing evaluators.

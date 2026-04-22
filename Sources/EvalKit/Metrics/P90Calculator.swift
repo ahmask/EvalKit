@@ -1,7 +1,7 @@
-// MetricKitML — all processing is on-device. No data leaves the device.
+// EvalKit — all processing is on-device. No data leaves the device.
 //
 // P90Calculator.swift
-// MetricKitML/Metrics
+// EvalKit/Metrics
 //
 // Computes the 90th percentile and other descriptive statistics using linear
 // interpolation (mirrors numpy.percentile default behaviour).
