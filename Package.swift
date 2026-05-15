@@ -1,13 +1,25 @@
 // swift-tools-version: 6.0
 // EvalKit — all processing is on-device. No data leaves the device.
+//
+// Platform compatibility per target:
+//
+//   EvalKit          — pure Foundation. iOS 16+, macOS 13+.
+//   EvalKitCoreML    — CoreML (available since iOS 11). iOS 16+, macOS 13+.
+//   EvalKitFoundation — generic async-closure wrapper. Does NOT import FoundationModels.
+//                       iOS 26+ gating is the caller's responsibility via @available(iOS 26, *).
+//                       The target itself compiles on iOS 16+.
+//
+// SPM does not support per-target platform declarations — the package minimum covers all
+// targets. EvalKitFoundation is kept generic so it compiles anywhere; callers guard with
+// @available before passing a FoundationModels-based closure to FoundationModelRunner.
 
 import PackageDescription
 
 let package = Package(
     name: "EvalKit",
     platforms: [
-        .iOS(.v18),
-        .macOS(.v15)
+        .iOS(.v16),
+        .macOS(.v13)
     ],
     products: [
         .library(name: "EvalKit", targets: ["EvalKit"]),
