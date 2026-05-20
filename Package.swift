@@ -1,64 +1,36 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 5.9
 // EvalKit — all processing is on-device. No data leaves the device.
 //
-// Platform compatibility per target:
+// v3.0.0 — targets reorganised by evaluation problem, not by Apple framework.
 //
-//   EvalKit          — pure Foundation. iOS 16+, macOS 13+.
-//   EvalKitCoreML    — CoreML (available since iOS 11). iOS 16+, macOS 13+.
-//   EvalKitFoundation — generic async-closure wrapper. Does NOT import FoundationModels.
-//                       iOS 26+ gating is the caller's responsibility via @available(iOS 26, *).
-//                       The target itself compiles on iOS 16+.
-//
-// SPM does not support per-target platform declarations — the package minimum covers all
-// targets. EvalKitFoundation is kept generic so it compiles anywhere; callers guard with
-// @available before passing a FoundationModels-based closure to FoundationModelRunner.
+//   EvalKit                — core protocols, shared models, shared metric helpers
+//   EvalKitClassification  — primitive 1: fixed label comparison
+//   EvalKitRetrieval       — primitive 2: reference set and ranked output comparison
+//   EvalKitRules           — primitive 3: deterministic rule-based validation
+//   EvalKitJudge           — primitive 4: LLM as judge
 
 import PackageDescription
 
 let package = Package(
     name: "EvalKit",
-    platforms: [
-        .iOS(.v16),
-        .macOS(.v13)
-    ],
+    platforms: [.iOS(.v16), .macOS(.v12)],
     products: [
-        .library(name: "EvalKit", targets: ["EvalKit"]),
-        .library(name: "EvalKitCoreML", targets: ["EvalKitCoreML"]),
-        .library(name: "EvalKitFoundation", targets: ["EvalKitFoundation"])
+        .library(name: "EvalKit",               targets: ["EvalKit"]),
+        .library(name: "EvalKitClassification", targets: ["EvalKitClassification"]),
+        .library(name: "EvalKitRetrieval",      targets: ["EvalKitRetrieval"]),
+        .library(name: "EvalKitRules",          targets: ["EvalKitRules"]),
+        .library(name: "EvalKitJudge",          targets: ["EvalKitJudge"]),
     ],
     targets: [
-        // Target 1 — core only, no ML imports, works in any iOS project
-        .target(
-            name: "EvalKit",
-            path: "Sources/EvalKit"
-        ),
-        // Target 2 — CoreML evaluation utilities, depends on EvalKit
-        .target(
-            name: "EvalKitCoreML",
-            dependencies: ["EvalKit"],
-            path: "Sources/EvalKitCoreML"
-        ),
-        // Target 3 — Foundation Model evaluation utilities, depends on EvalKit
-        .target(
-            name: "EvalKitFoundation",
-            dependencies: ["EvalKit"],
-            path: "Sources/EvalKitFoundation"
-        ),
-        // Tests
-        .testTarget(
-            name: "EvalKitTests",
-            dependencies: ["EvalKit"],
-            path: "Tests/EvalKitTests"
-        ),
-        .testTarget(
-            name: "EvalKitCoreMLTests",
-            dependencies: ["EvalKitCoreML"],
-            path: "Tests/EvalKitCoreMLTests"
-        ),
-        .testTarget(
-            name: "EvalKitFoundationTests",
-            dependencies: ["EvalKitFoundation"],
-            path: "Tests/EvalKitFoundationTests"
-        )
+        .target(name: "EvalKit",               dependencies: []),
+        .target(name: "EvalKitClassification", dependencies: ["EvalKit"]),
+        .target(name: "EvalKitRetrieval",      dependencies: ["EvalKit"]),
+        .target(name: "EvalKitRules",          dependencies: ["EvalKit"]),
+        .target(name: "EvalKitJudge",          dependencies: ["EvalKit"]),
+        .testTarget(name: "EvalKitTests",               dependencies: ["EvalKit"]),
+        .testTarget(name: "EvalKitClassificationTests", dependencies: ["EvalKitClassification"]),
+        .testTarget(name: "EvalKitRetrievalTests",      dependencies: ["EvalKitRetrieval"]),
+        .testTarget(name: "EvalKitRulesTests",          dependencies: ["EvalKitRules"]),
+        .testTarget(name: "EvalKitJudgeTests",          dependencies: ["EvalKitJudge"]),
     ]
 )
