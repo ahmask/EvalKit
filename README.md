@@ -41,25 +41,32 @@ EvalKit has two evaluation paths:
 
 ## Architecture
 
-EvalKit ships three targets. Import only what you need:
+EvalKit ships five targets. Import only what you need:
 
 ```
 EvalKit (core)
-├── Protocols:  EvaluationCase, EvaluationRunner, EvaluationReporter, JudgeRunner
-├── Models:     EvaluationResult, EvaluationMetrics, EvaluationReport
-└── Metrics:    PrecisionRecallF1, LatencyMeasurer, P90Calculator, FalseRateCalculator
+├── Protocols:  EvaluationCase, EvaluationRunner, EvaluationReporter
+├── Models:     EvaluationResult, EvaluationMetrics, EvaluationReport, TextEvaluationCase
+└── Metrics:    LatencyMeasurer, P90Calculator
 
-EvalKitCoreML                → depends on EvalKit + CoreML
-├── CoreMLTextCase + CoreMLLatencyRunner
-└── CoreMLTabularCase + CoreMLTabularRunner
+EvalKitClassification        → depends on EvalKit
+├── PrecisionRecallF1, ConfusionMatrix
+├── StandardClassificationReporter
+└── MultiLabelClassificationReporter
 
-EvalKitFoundation            → depends on EvalKit only (no FoundationModels import)
-├── FoundationModelCase + FoundationModelRunner    ← classification path
-├── JudgeScoringPattern, JudgeDimension            ← judge building blocks
-├── JudgeScore, JudgeResult                        ← per-case judge output
-├── LLMJudgeRunner                                 ← core judge runner
-├── JudgeMetrics, JudgeReport                      ← aggregated output
-└── LLMJudgeReporter                               ← orchestrator
+EvalKitRetrieval             → depends on EvalKit
+├── JaccardSimilarity, PositionSimilarity, BLEUScore, ROUGEScore, MeanReciprocalRank
+├── SimilarityRunner
+└── RetrievalReporter
+
+EvalKitRules                 → depends on EvalKit
+├── EvaluationRule, AllowedItemsRule, LanguageMatchRule
+└── RulesReporter
+
+EvalKitJudge                 → depends on EvalKit
+├── JudgeDimension, JudgeMetrics, JudgeReport
+├── LLMJudgeRunner
+└── LLMJudgeReporter
 ```
 
 ---
@@ -76,9 +83,11 @@ EvalKitFoundation            → depends on EvalKit only (no FoundationModels im
 .target(
     name: "MyApp",
     dependencies: [
-        .product(name: "EvalKit",          package: "EvalKit"),
-        .product(name: "EvalKitCoreML",    package: "EvalKit"),  // optional
-        .product(name: "EvalKitFoundation", package: "EvalKit"), // optional
+        .product(name: "EvalKit",               package: "EvalKit"),
+        .product(name: "EvalKitClassification", package: "EvalKit"),  // CoreML classification
+        .product(name: "EvalKitRetrieval",      package: "EvalKit"),  // retrieval / similarity
+        .product(name: "EvalKitRules",          package: "EvalKit"),  // rules-based checks
+        .product(name: "EvalKitJudge",          package: "EvalKit"),  // LLM-as-a-judge
     ]
 )
 ```
@@ -185,7 +194,7 @@ Score 5 = fully coherent. Score 1 = contradicts the input or makes no sense.
 
 ```swift
 import EvalKit
-import EvalKitCoreML
+import EvalKitClassification
 
 let runner = CoreMLLatencyRunner { text in
     try myRecipeModel.prediction(text: text).label
@@ -206,12 +215,12 @@ print(report.passedBaseline)
 
 ```swift
 import FoundationModels
-import EvalKitFoundation
+import EvalKit
+import EvalKitJudge
 
 let session = LanguageModelSession()
 
 let reporter = LLMJudgeReporter(
-    dimensions: [.fluency(), .tone(), .safety()],
     minimumPassRate: 0.80,
     passingThreshold: 3.0
 ) { prompt in
@@ -237,7 +246,8 @@ This mirrors the claim summarisation use case. The model summarises a customer c
 
 ```swift
 import FoundationModels
-import EvalKitFoundation
+import EvalKit
+import EvalKitJudge
 
 let session = LanguageModelSession()
 
