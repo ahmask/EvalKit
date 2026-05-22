@@ -50,12 +50,15 @@ public struct JudgeMetrics: Sendable {
         /// `p90Score` correctly — a `0.8` average means different things per pattern.
         public let scoringPattern: JudgeScoringPattern
 
-        /// Mean score across all cases for this dimension. In `[0.0, 1.0]`.
+        /// Mean raw score across all cases for this dimension.
         ///
-        /// `1.0` = every case passed this dimension at the maximum score.
-        /// `0.0` = every case scored 0 on this dimension.
-        /// For holistic dimensions, scores are normalised from 1–5 to `[0.0, 1.0]`
-        /// before averaging (i.e. score 5 → 1.0, score 1 → 0.0).
+        /// The range depends on the scoring pattern:
+        /// - **Binary**: `0.0` (failed) or `1.0` (passed).
+        /// - **Item-by-item**: `[0.0, 1.0]` — fraction of key facts found.
+        /// - **Holistic**: `[1.0, 5.0]` — the raw 1–5 judge score. `5.0` is best, `1.0` is worst.
+        ///
+        /// Scores are **not** normalised. Compare `averageScore` against the dimension's
+        /// `passingThreshold` to understand the margin from passing (holistic threshold default: `3.0`).
         public let averageScore: Double
 
         /// Fraction of cases where this dimension's score met its passing threshold.
@@ -66,11 +69,12 @@ public struct JudgeMetrics: Sendable {
         /// `1.0` = every case passed. `0.0` = no case passed.
         public let passRate: Double
 
-        /// 90th-percentile score across all cases for this dimension. In `[0.0, 1.0]`.
+        /// 90th-percentile raw score across all cases for this dimension.
         ///
-        /// Higher is better — indicates the score floor for the best 90% of cases.
-        /// A low P90 (e.g. 0.6) with a high average (e.g. 0.85) indicates a minority of
-        /// cases are dragging the dimension down severely.
+        /// The range follows the same pattern as `averageScore`: binary/item-by-item in
+        /// `[0.0, 1.0]`, holistic in `[1.0, 5.0]`. Higher is better — indicates the score
+        /// floor for the best 90% of cases. A low P90 with a high average indicates a
+        /// minority of cases are dragging the dimension down severely.
         public let p90Score: Double
 
         /// Per-fact pass rates across all cases. Only populated for item-by-item dimensions.

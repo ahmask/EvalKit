@@ -249,7 +249,7 @@ final class JudgeTests: XCTestCase {
     // MARK: 16 — keyFactsOverride uses override instead of defaults
 
     func test_keyFactsOverride_usesOverrideInsteadOfDefaults() async {
-        var capturedPrompt = ""
+        nonisolated(unsafe) var capturedPrompt = ""
         let dim = JudgeDimension(
             name: "recall",
             promptTemplate: "Facts: {key_facts}\nInput: {input}\nOutput: {output}",

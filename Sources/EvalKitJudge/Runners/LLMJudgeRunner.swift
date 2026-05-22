@@ -255,7 +255,7 @@ public struct LLMJudgeRunner: JudgeRunner, Sendable {
             )
         }
 
-        let scoreDouble: Double
+        var scoreDouble: Double
         if let intScore = scoreValue as? Int {
             scoreDouble = Double(intScore)
         } else if let dblScore = scoreValue as? Double {
@@ -269,6 +269,8 @@ public struct LLMJudgeRunner: JudgeRunner, Sendable {
                 passingThreshold: passingThreshold
             )
         }
+
+        scoreDouble = min(max(scoreDouble, 1.0), 5.0)
 
         return JudgeScore(
             dimension: dimension.name,

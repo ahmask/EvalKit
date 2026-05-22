@@ -235,6 +235,20 @@ public enum PrecisionRecallF1 {
     /// - Returns: `Output` with accuracy, per-class `classMetrics`, macro/weighted P/R/F1,
     ///   and the full `confusionMatrix`. All values are `0.0` when `results` is empty.
     public static func compute(from results: [EvaluationResult], labels: [String]) -> Output {
+        guard !labels.isEmpty else {
+            return Output(
+                accuracy: 0.0,
+                classMetrics: [],
+                macroPrecision: 0.0,
+                macroRecall: 0.0,
+                macroF1: 0.0,
+                weightedPrecision: 0.0,
+                weightedRecall: 0.0,
+                weightedF1: 0.0,
+                confusionMatrix: ConfusionMatrix(labels: [], matrix: [])
+            )
+        }
+
         let total = results.count
         let correct = results.filter(\.isCorrect).count
         let accuracy = total > 0 ? Double(correct) / Double(total) : 0.0
