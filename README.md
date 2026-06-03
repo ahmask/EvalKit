@@ -25,14 +25,15 @@ EvalKit has two evaluation paths:
 
 ## Choosing the right path
 
-| Feature type | Recommended runner |
+| Feature type | Recommended reporter |
 |---|---|
 | CoreML text classifier (fixed labels) | `CoreMLLatencyRunner` |
 | CoreML tabular classifier | `CoreMLTabularRunner` |
 | FoundationModel classification | `FoundationModelRunner` |
-| FoundationModel free-text generation | `LLMJudgeReporter` |
-| Greeting / summary / explanation generation | `LLMJudgeReporter` |
-| Any output with no single correct answer | `LLMJudgeReporter` |
+| FoundationModel free-text generation (device, iOS 26+) | `FoundationModelsJudgeReporter` |
+| FoundationModel free-text generation (simulator / mock) | `LLMJudgeReporter` |
+| Greeting / summary / explanation generation | `FoundationModelsJudgeReporter` |
+| Any output with no single correct answer | `FoundationModelsJudgeReporter` |
 
 > **If you can write `predicted == expected`, use `EvaluationRunner`.**  
 > **If you can't — because any well-written answer is acceptable — use `JudgeRunner`.**
@@ -41,7 +42,7 @@ EvalKit has two evaluation paths:
 
 ## Architecture
 
-EvalKit ships five targets. Import only what you need:
+EvalKit ships six targets. Import only what you need:
 
 ```
 EvalKit (core)
@@ -49,24 +50,28 @@ EvalKit (core)
 ├── Models:     EvaluationResult, EvaluationMetrics, EvaluationReport, TextEvaluationCase
 └── Metrics:    LatencyMeasurer, P90Calculator
 
-EvalKitClassification        → depends on EvalKit
+EvalKitClassification            → depends on EvalKit
 ├── PrecisionRecallF1, ConfusionMatrix
 ├── StandardClassificationReporter
 └── MultiLabelClassificationReporter
 
-EvalKitRetrieval             → depends on EvalKit
+EvalKitRetrieval                 → depends on EvalKit
 ├── JaccardSimilarity, PositionSimilarity, BLEUScore, ROUGEScore, MeanReciprocalRank
 ├── SimilarityRunner
 └── RetrievalReporter
 
-EvalKitRules                 → depends on EvalKit
+EvalKitRules                     → depends on EvalKit
 ├── EvaluationRule, AllowedItemsRule, LanguageMatchRule
 └── RulesReporter
 
-EvalKitJudge                 → depends on EvalKit
+EvalKitJudge                     → depends on EvalKit
 ├── JudgeDimension, JudgeMetrics, JudgeReport
 ├── LLMJudgeRunner
-└── LLMJudgeReporter
+└── LLMJudgeReporter  ← escape hatch: mocking, simulator, custom models
+
+EvalKitFoundationModels          → depends on EvalKitJudge, iOS 26+
+├── FoundationModelsAdapter
+└── FoundationModelsJudgeReporter  ← primary path: zero session management
 ```
 
 ---
@@ -76,21 +81,31 @@ EvalKitJudge                 → depends on EvalKit
 ### Swift Package Manager
 
 ```swift
-.package(url: "https://github.com/ahmask/EvalKit", from: "1.0.0")
+.package(url: "https://github.com/ahmask/EvalKit", from: "3.1.0")
 ```
 
 ```swift
 .target(
     name: "MyApp",
     dependencies: [
-        .product(name: "EvalKit",               package: "EvalKit"),
-        .product(name: "EvalKitClassification", package: "EvalKit"),  // CoreML classification
-        .product(name: "EvalKitRetrieval",      package: "EvalKit"),  // retrieval / similarity
-        .product(name: "EvalKitRules",          package: "EvalKit"),  // rules-based checks
-        .product(name: "EvalKitJudge",          package: "EvalKit"),  // LLM-as-a-judge
+        .product(name: "EvalKit",                    package: "EvalKit"),
+        .product(name: "EvalKitClassification",      package: "EvalKit"),  // CoreML classification
+        .product(name: "EvalKitRetrieval",           package: "EvalKit"),  // retrieval / similarity
+        .product(name: "EvalKitRules",               package: "EvalKit"),  // rules-based checks
+        .product(name: "EvalKitFoundationModels",    package: "EvalKit"),  // LLM judge, zero config (iOS 26+)
+        // .product(name: "EvalKitJudge",            package: "EvalKit"),  // LLM judge, custom closure
     ]
 )
 ```
+
+| Target | Purpose | iOS |
+|---|---|---|
+| `EvalKit` | Core protocols and models | 16.0+ |
+| `EvalKitClassification` | Accuracy, F1, confusion matrix | 16.0+ |
+| `EvalKitRetrieval` | Jaccard, BLEU, MRR, ROUGE | 16.0+ |
+| `EvalKitRules` | Deterministic rule validation | 16.0+ |
+| `EvalKitJudge` | LLM judge (closure-based, for mocking and custom models) | 16.0+ |
+| `EvalKitFoundationModels` | LLM judge (FoundationModels, zero config) | 26.0+ |
 
 ### Xcode
 
@@ -167,6 +182,15 @@ Score 5 = completely safe. Score 1 = harmful content present.
 Checks whether the text follows logic and commonsense and fits the context.  
 Score 5 = fully coherent. Score 1 = contradicts the input or makes no sense.
 
+### Faithfulness (holistic, 1–5)
+Designed for RAG (Retrieval Augmented Generation) systems. Checks whether the generated response accurately represents the retrieved context — no distortion, no misrepresentation.  
+Score 5 = entirely faithful to the retrieved context. Score 1 = distorts or contradicts the source.
+
+**Faithfulness vs Groundedness:**  
+- *Groundedness* asks: "Did you invent something that was not in the input?" (hallucination check).  
+- *Faithfulness* asks: "Did you represent what the source said accurately, without distorting it?" Even a real-world true fact counts as a violation if it was not in the retrieved context.  
+Use both together for thorough RAG evaluation.
+
 ---
 
 ## How scores are aggregated
@@ -211,33 +235,66 @@ let report = reporter.report(from: results, featureName: "RecipeClassifier")
 print(report.passedBaseline)
 ```
 
-### Example 2 — Holistic generative evaluation (greeting generation)
+### Example 2 — LLM as judge: quick start (FoundationModels, iOS 26+)
+
+Use `FoundationModelsJudgeReporter` when evaluating on a real device with Apple Intelligence.
+Zero session management — the judge session is owned internally by EvalKit.
 
 ```swift
 import FoundationModels
 import EvalKit
-import EvalKitJudge
+import EvalKitFoundationModels
 
-let session = LanguageModelSession()
+// Your existing generation session — you own this
+let generationSession = LanguageModelSession(
+    instructions: "You are a personalised greeting generator for an airline app."
+)
 
-let reporter = LLMJudgeReporter(
+// The reporter owns its own judge session — no session code needed from you
+let reporter = FoundationModelsJudgeReporter(
+    dimensions: [.fluency(language: "en"), .groundedness(), .tone()],
     minimumPassRate: 0.80,
-    passingThreshold: 3.0
-) { prompt in
-    try await session.respond(to: prompt).content
-}
+    judgeInstructions: "You are an expert evaluator for airline customer communications."
+)
 
 let cases = [
-    FoundationModelCase(id: "1", input: "Senator member, boarding gate 12", expectedOutput: ""),
-    FoundationModelCase(id: "2", input: "HON Circle, flight LH400 delayed 40 min", expectedOutput: ""),
+    TextEvaluationCase(id: "cancel-1", input: "Flight LH400 cancelled. HON Circle member.", expectedOutput: ""),
+    TextEvaluationCase(id: "gate-1",   input: "Gate changed to B22. Senator member.",       expectedOutput: ""),
 ]
 
-let report = await reporter.report(from: cases, featureName: "PassengerGreeting") { testCase in
-    try await session.respond(to: "Generate a greeting for: \(testCase.input)").content
-}
+let report = await reporter.report(
+    from: cases,
+    featureName: "PassengerGreeting",
+    outputProvider: { testCase in
+        // Call your existing feature here
+        try await generationSession.respond(to: testCase.input).content
+    }
+)
 
-print(report.passedBaseline)
-print(report.metrics.passRate)
+print(report.passedBaseline)        // true / false — use as XCTest assertion or CI gate
+print(report.metrics.passRate)      // e.g. 0.87
+```
+
+### Example 2a — LLM as judge: simulator or custom model (advanced)
+
+Use `LLMJudgeReporter` when:
+- Testing on simulator (use a mock closure)
+- Using a custom or fine-tuned model
+- Targeting iOS below 26.0
+- Running on macOS
+
+```swift
+import EvalKit
+import EvalKitJudge
+
+// Simulator / unit test: return deterministic mock JSON
+let reporter = LLMJudgeReporter(
+    dimensions: [.fluency(), .tone()],
+    minimumPassRate: 0.80
+) { prompt in
+    // Your session, your mock, your model
+    return #"{"passed": true, "reasoning": "Mock: always passes"}"#
+}
 ```
 
 ### Example 3 — Item-by-item evaluation (claim summarisation)
@@ -260,8 +317,8 @@ let reporter = LLMJudgeReporter(
 }
 
 let cases = [
-    FoundationModelCase(id: "claim-1", input: emilyEmail, expectedOutput: ""),
-    FoundationModelCase(id: "claim-2", input: johnEmail,  expectedOutput: ""),
+    TextEvaluationCase(id: "claim-1", input: emilyEmail, expectedOutput: ""),
+    TextEvaluationCase(id: "claim-2", input: johnEmail,  expectedOutput: ""),
 ]
 
 let keyFactsPerCase: [String: [String]] = [

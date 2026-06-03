@@ -3,20 +3,24 @@
 //
 // Platform compatibility per target:
 //
-//   EvalKit               — core types (EvaluationReport, EvaluationMetrics, EvaluationResult,
-//                           TextEvaluationCase, P90Calculator). Pure Foundation. iOS 16+, macOS 13+.
-//   EvalKitClassification — Classification reporters (StandardClassificationReporter,
-//                           MultiLabelClassificationReporter). iOS 16+, macOS 13+.
-//   EvalKitJudge          — LLM-as-a-Judge evaluation (LLMJudgeReporter, LLMJudgeRunner,
-//                           JudgeDimension, JudgeReport, JudgeMetrics). Does NOT import
-//                           FoundationModels — the caller provides the judge LLM closure.
-//                           iOS 16+. Requires iOS 26+ judge closure for FM-based judging.
-//   EvalKitRules          — Deterministic output quality rules (MaxWordsRule, MaxSentencesRule,
-//                           RegexRule, AllowedItemsRule, LanguageMatchRule, ValidJSONRule,
-//                           RulesReporter). iOS 16+, macOS 13+.
-//   EvalKitRetrieval      — Retrieval evaluation utilities. iOS 16+, macOS 13+.
+//   EvalKit                    — core types (EvaluationReport, EvaluationMetrics, EvaluationResult,
+//                                TextEvaluationCase, P90Calculator). Pure Foundation. iOS 16+, macOS 13+.
+//   EvalKitClassification      — Classification reporters (StandardClassificationReporter,
+//                                MultiLabelClassificationReporter). iOS 16+, macOS 13+.
+//   EvalKitJudge               — LLM-as-a-Judge evaluation (LLMJudgeReporter, LLMJudgeRunner,
+//                                JudgeDimension, JudgeReport, JudgeMetrics). Does NOT import
+//                                FoundationModels — the caller provides the judge LLM closure.
+//                                iOS 16+. Escape hatch for mocking, simulator, custom models.
+//   EvalKitRules               — Deterministic output quality rules (MaxWordsRule, MaxSentencesRule,
+//                                RegexRule, AllowedItemsRule, LanguageMatchRule, ValidJSONRule,
+//                                RulesReporter). iOS 16+, macOS 13+.
+//   EvalKitRetrieval           — Retrieval evaluation utilities. iOS 16+, macOS 13+.
+//   EvalKitFoundationModels    — Zero-config LLM judge via Apple FoundationModels. Primary path
+//                                for on-device judge evaluation. Owns the judge session internally.
+//                                iOS 26+, macOS 26+. Enforced via @available checks at runtime.
 //
 // SPM does not support per-target platform declarations — the package minimum covers all targets.
+// EvalKitFoundationModels requires Xcode 26+ / iOS 26 SDK to build.
 
 import PackageDescription
 
@@ -32,6 +36,7 @@ let package = Package(
         .library(name: "EvalKitJudge", targets: ["EvalKitJudge"]),
         .library(name: "EvalKitRules", targets: ["EvalKitRules"]),
         .library(name: "EvalKitRetrieval", targets: ["EvalKitRetrieval"]),
+        .library(name: "EvalKitFoundationModels", targets: ["EvalKitFoundationModels"]),
     ],
     targets: [
         // Core — no ML imports, works in any iOS 16+ project
@@ -63,6 +68,13 @@ let package = Package(
             dependencies: ["EvalKit"],
             path: "Sources/EvalKitRetrieval"
         ),
+        // Zero-config LLM judge using Apple FoundationModels — primary judge path, iOS 26+
+        // Availability enforced via @available checks. Requires Xcode 26+ / iOS 26 SDK to build.
+        .target(
+            name: "EvalKitFoundationModels",
+            dependencies: ["EvalKitJudge"],
+            path: "Sources/EvalKitFoundationModels"
+        ),
         // Tests
         .testTarget(
             name: "EvalKitTests",
@@ -88,6 +100,11 @@ let package = Package(
             name: "EvalKitRetrievalTests",
             dependencies: ["EvalKitRetrieval"],
             path: "Tests/EvalKitRetrievalTests"
+        ),
+        .testTarget(
+            name: "EvalKitFoundationModelsTests",
+            dependencies: ["EvalKitFoundationModels"],
+            path: "Tests/EvalKitFoundationModelsTests"
         ),
     ]
 )

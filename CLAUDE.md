@@ -13,6 +13,7 @@
 
     # Run a single test target
     swift test --filter EvalKitClassificationTests
+    swift test --filter EvalKitFoundationModelsTests
     swift test --filter EvalKitJudgeTests
     swift test --filter EvalKitRetrievalTests
     swift test --filter EvalKitRulesTests
@@ -50,7 +51,11 @@
     ├── Models:    JudgeDimension, JudgeScore, JudgeResult, JudgeMetrics, JudgeReport, JudgeScoringPattern
     ├── Protocols: JudgeRunner
     ├── Runners:   LLMJudgeRunner
-    └── Reporters: LLMJudgeReporter
+    └── Reporters: LLMJudgeReporter  ← escape hatch: mocking, simulator, custom models
+
+    EvalKitFoundationModels → depends on EvalKitJudge, iOS 26+, macOS 26+
+    ├── FoundationModelsAdapter        ← wraps LanguageModelSession into judge closure shape
+    └── FoundationModelsJudgeReporter  ← primary path: zero session management for developer
     ```
 
     ## Evaluation primitives — when to use which
@@ -58,8 +63,17 @@
     | Question | Answer | Use |
     |---|---|---|
     | Can you write `predicted == expected`? | Yes | `EvaluationRunner` + classification/retrieval reporter |
-    | Is the output free-form text with no single correct answer? | Yes | `LLMJudgeReporter` (EvalKitJudge) |
+    | Is the output free-form text with no single correct answer? | Yes | `FoundationModelsJudgeReporter` (EvalKitFoundationModels) on device |
+    | Is the output free-form text but running on simulator or custom model? | Yes | `LLMJudgeReporter` (EvalKitJudge) with a mock/custom closure |
     | Can correctness be checked mechanically (length, format, regex)? | Yes | `RulesReporter` (EvalKitRules) |
+
+    ## Design decisions
+
+    - `EvalKitFoundationModels` is the **primary judge path**, not `EvalKitJudge`.
+    - `EvalKitJudge` is the **escape hatch** for mocking, simulator, custom models, and macOS.
+    - Do not invert this hierarchy in documentation or examples.
+    - `FoundationModelsJudgeReporter` owns the judge session internally. The developer
+      never writes `LanguageModelSession` code for evaluation.
 
     ## Core data flow
 
@@ -72,7 +86,7 @@
     - **Holistic (1–5)**: judge returns one score for the whole output. Used for fluency, tone, safety, coherence.
     - **Item-by-item (ratio)**: judge scores each key fact 0 or 1; final score = `sum / count`. Used for recall and groundedness (hallucination check).
 
-    Built-in `JudgeDimension` presets: `.fluency()`, `.tone()`, `.safety()`, `.coherence()`, `.recall()`, `.groundedness()`. Custom dimensions via `JudgeDimension.custom(name:prompt:scoringPattern:)`.
+    Built-in `JudgeDimension` presets: `.fluency()`, `.tone()`, `.safety()`, `.coherence()`, `.recall()`, `.groundedness()`, `.faithfulness()`. Custom dimensions via `JudgeDimension.custom(name:prompt:scoringPattern:)`.
 
     ## File header convention
 
@@ -87,3 +101,4 @@
     1. Add the target to `Package.swift` with `dependencies: ["EvalKit"]`.
     2. Add a corresponding test target.
     3. Follow the `Sources/EvalKit<Name>/` directory structure with `Models/`, `Metrics/`, `Runners/`, `Reporters/`, `Protocols/` subdirectories as applicable.
+
